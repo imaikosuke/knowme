@@ -7,6 +7,7 @@ export interface Player {
   nickname: string;
   isOwner: boolean;
   isEliminated: boolean;
+  hasGuessed: boolean;
 }
 
 export interface Question {
