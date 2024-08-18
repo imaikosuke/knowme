@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Room, Player, Question } from "@/types";
 import { Button } from "@/components/ui/button";
-import { submitGuess } from "@/app/api/services/gameService";
+import { submitGuess, moveToNextRound } from "@/app/api/services/gameService";
 import { submitAnswer } from "@/app/api/services/questionService";
 import { useFirebaseListener } from "@/hooks/useFirebaseListener";
 
@@ -15,14 +15,41 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
   const [answer, setAnswer] = useState("");
   const [allAnswers, setAllAnswers] = useState<string[]>([]);
   const [guessResult, setGuessResult] = useState<string | null>(null);
+  const [guessSubmitted, setGuessSubmitted] = useState<boolean>(false);
+  const [players, setPlayers] = useState<Record<string, Player>>({});
+  const [gameStatus, setGameStatus] = useState<"playing" | "finished" | "waiting">(room.status);
+  const [winner, setWinner] = useState<string | null>(null);
 
-  useFirebaseListener(`rooms/${room.id}/currentQuestion`, setCurrentQuestion);
-  useFirebaseListener(`rooms/${room.id}/allAnswers/${room.gameState.currentQuestionId}`, (data) => {
-    setAllAnswers(data || []); // データがnullの場合は空の配列を設定
+  useFirebaseListener(`rooms/${room.id}`, (data) => {
+    if (data) {
+      setCurrentQuestion(data.currentQuestion || null);
+      setAllAnswers(data.allAnswers?.[data.gameState.currentQuestionId] || []);
+      setPlayers(data.players || {});
+      setGameStatus(data.status);
+      setWinner(data.winner || null);
+    }
   });
 
-  const handleSubmitAnswer = async () => {
-    if (answer && currentQuestion) {
+  const handleMoveToNextRound = useCallback(async () => {
+    if (gameStatus === "playing") {
+      await moveToNextRound(room.id);
+      setGuessResult(null);
+      setGuessSubmitted(false);
+    }
+  }, [room.id, gameStatus]);
+
+  useEffect(() => {
+    const allPlayersGuessed = Object.values(players).every(
+      (player) =>
+        player.id === room.gameState.currentPlayerId || player.hasGuessed || player.isEliminated
+    );
+    if (allPlayersGuessed && Object.keys(players).length > 0 && gameStatus === "playing") {
+      handleMoveToNextRound();
+    }
+  }, [players, room.gameState.currentPlayerId, handleMoveToNextRound, gameStatus]);
+
+  const handleSubmitAnswer = useCallback(async () => {
+    if (answer && currentQuestion && gameStatus === "playing") {
       await submitAnswer({
         roomId: room.id,
         playerId: currentPlayer.id,
@@ -31,33 +58,45 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
       });
       setAnswer("");
     }
-  };
+  }, [answer, currentQuestion, room.id, currentPlayer.id, gameStatus]);
 
-  const handleSubmitGuess = async (guessedAnswer: string) => {
-    console.log("Submitting guess:", guessedAnswer);
-    if (currentQuestion) {
-      console.log("room.id", room.id);
-      console.log("currentPlayer.id", currentPlayer.id);
-      console.log("room.gameState.currentPlayerId", room.gameState.currentPlayerId);
-      console.log("currentQuestion.id", currentQuestion.id);
-      console.log("guessedAnswer", guessedAnswer);
-      const result = await submitGuess({
-        roomId: room.id,
-        playerId: currentPlayer.id,
-        targetPlayerId: room.gameState.currentPlayerId,
-        questionId: currentQuestion.id,
-        guessedAnswer,
-      });
+  const handleSubmitGuess = useCallback(
+    async (guessedAnswer: string) => {
+      if (currentQuestion && !guessSubmitted && gameStatus === "playing") {
+        const result = await submitGuess({
+          roomId: room.id,
+          playerId: currentPlayer.id,
+          targetPlayerId: room.gameState.currentPlayerId,
+          questionId: currentQuestion.id,
+          guessedAnswer,
+        });
 
-      if (result.error) {
-        setGuessResult(`Error: ${result.error}`);
-      } else {
-        setGuessResult(result.data ? "Correct guess!" : "Incorrect guess. You're eliminated.");
+        if (result.error) {
+          setGuessResult(`Error: ${result.error}`);
+        } else {
+          setGuessResult(result.data ? "Correct guess!" : "Incorrect guess. You're eliminated.");
+          setGuessSubmitted(true);
+        }
       }
-    } else {
-      console.log("currentQuestion No");
-    }
-  };
+    },
+    [
+      currentQuestion,
+      guessSubmitted,
+      room.id,
+      currentPlayer.id,
+      room.gameState.currentPlayerId,
+      gameStatus,
+    ]
+  );
+
+  if (gameStatus === "finished") {
+    return (
+      <div>
+        <h2 className="text-xl font-semibold mb-2">Game Over!</h2>
+        <p className="mb-4">Winner: {players[winner!]?.nickname}</p>
+      </div>
+    );
+  }
 
   if (!currentQuestion) {
     return <div>Waiting for the next question...</div>;
@@ -78,7 +117,8 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
           <Button onClick={handleSubmitAnswer}>Submit Answer</Button>
         </>
       ) : (
-        allAnswers.length > 0 && (
+        allAnswers.length > 0 &&
+        !guessSubmitted && (
           <div>
             <h3 className="text-lg font-semibold mb-2">Choose the correct answer:</h3>
             {allAnswers.map((ans, index) => (
@@ -86,10 +126,11 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
                 {ans}
               </Button>
             ))}
-            {guessResult && <p className="mt-4 font-bold">{guessResult}</p>}
           </div>
         )
       )}
+      {guessResult && <p className="mt-4 font-bold">{guessResult}</p>}
+      {guessSubmitted && <p className="mt-4">Waiting for other players to submit their guesses...</p>}
     </div>
   );
 }
