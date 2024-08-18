@@ -1,6 +1,6 @@
 import { database } from "@/lib/firebase";
 import { ref, get, set, update } from "firebase/database";
-import { GameState, Player, GuessSubmit, ApiResponse, Question } from "@/types";
+import { GameState, Player, GuessSubmit, ApiResponse, Question, Room } from "@/types";
 import { getPlayers, selectRandomPlayer, updatePlayer } from "./playerService";
 import { createQuestion, getAnswers, getRandomQuestion } from "./questionService";
 
@@ -111,11 +111,28 @@ export const submitGuess = async (data: GuessSubmit): Promise<ApiResponse<boolea
     }
 
     const isCorrect = guessedAnswer.toLowerCase() === correctAnswer.toLowerCase();
-    console.log("Guess result:", isCorrect);
+
+    const updates: { [key: string]: any } = {
+      [`players/${playerId}/hasGuessed`]: true,
+    };
 
     if (!isCorrect) {
-      await updatePlayer(roomId, playerId, { isEliminated: true });
-      console.log("Player eliminated:", playerId);
+      updates[`players/${playerId}/isEliminated`] = true;
+    }
+
+    await update(ref(database, `rooms/${roomId}`), updates);
+
+    // Check if the game has ended
+    const roomSnapshot = await get(ref(database, `rooms/${roomId}`));
+    const room: Room = roomSnapshot.val();
+    const activePlayers = Object.values(room.players).filter((p: Player) => !p.isEliminated);
+
+    if (activePlayers.length === 1) {
+      // Game has ended
+      await update(ref(database, `rooms/${roomId}`), {
+        status: "finished",
+        winner: activePlayers[0].id,
+      });
     }
 
     return { data: isCorrect };
@@ -151,30 +168,42 @@ export const checkGameEnd = async (roomId: string): Promise<ApiResponse<Player |
 export const moveToNextRound = async (roomId: string): Promise<ApiResponse<null>> => {
   try {
     const roomRef = ref(database, `rooms/${roomId}`);
+    const roomSnapshot = await get(roomRef);
+    const room = roomSnapshot.val();
+
+    if (room.status === "finished") {
+      return { data: null }; // Game has already ended, do nothing
+    }
+
     const gameStateRef = ref(database, `rooms/${roomId}/gameState`);
-    const currentQuestionRef = ref(database, `rooms/${roomId}/currentQuestion`);
+    const playersRef = ref(database, `rooms/${roomId}/players`);
 
     const gameStateSnapshot = await get(gameStateRef);
     const currentGameState = gameStateSnapshot.val() as GameState;
 
     const nextPlayer = await selectRandomPlayer(roomId);
-    const nextQuestionResponse = await getRandomQuestion(roomId);
+    const nextQuestion = await getRandomQuestion(roomId);
 
-    if (nextQuestionResponse.error || !nextQuestionResponse.data) {
+    if (nextQuestion.error || !nextQuestion.data) {
       return { error: "No more questions available. Game over." };
     }
-
-    const nextQuestion = nextQuestionResponse.data;
 
     const newGameState: GameState = {
       currentRound: currentGameState.currentRound + 1,
       currentPlayerId: nextPlayer.data!.id,
-      currentQuestionId: nextQuestion.id,
+      currentQuestionId: nextQuestion.data.id,
     };
+
+    const playersSnapshot = await get(playersRef);
+    const players = playersSnapshot.val();
+    Object.keys(players).forEach((playerId) => {
+      players[playerId].hasGuessed = false;
+    });
 
     await update(roomRef, {
       gameState: newGameState,
-      currentQuestion: nextQuestion,
+      currentQuestion: nextQuestion.data,
+      players: players,
     });
 
     return { data: null };
