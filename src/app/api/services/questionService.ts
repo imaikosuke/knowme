@@ -2,6 +2,7 @@ import { database } from "@/lib/firebase";
 import { ref, push, set, get, update } from "firebase/database";
 import { Question, Answer, AnswerSubmit, ApiResponse } from "@/types";
 import { generateAnswers } from "./openaiService";
+import { questions } from "@/types/questions";
 
 export const createQuestion = async (
   roomId: string,
@@ -25,17 +26,9 @@ export const createQuestion = async (
   }
 };
 
-export const getQuestions = async (roomId: string): Promise<ApiResponse<Question[]>> => {
+export const getQuestions = async (): Promise<ApiResponse<Question[]>> => {
   try {
-    const questionsRef = ref(database, `rooms/${roomId}/questions`);
-    const snapshot = await get(questionsRef);
-    const questions = snapshot.val() as Record<string, Question> | null;
-
-    if (!questions) {
-      return { data: [] };
-    }
-
-    return { data: Object.values(questions) };
+    return { data: questions.map((q, index) => ({ id: `q${index}`, text: q })) };
   } catch (error) {
     console.error("Failed to get questions:", error);
     return { error: "Failed to get questions" };
@@ -46,7 +39,7 @@ export const submitAnswer = async (data: AnswerSubmit): Promise<ApiResponse<null
   try {
     const { roomId, playerId, questionId, answer } = data;
     const answerRef = ref(database, `rooms/${roomId}/answers/${questionId}`);
-    
+
     await update(answerRef, { [playerId]: answer });
 
     const fakeAnswersResponse = await generateAnswers(answer);
@@ -109,18 +102,18 @@ export const getAllAnswers = async (
 
 export const getRandomQuestion = async (roomId: string): Promise<ApiResponse<Question>> => {
   try {
-    const questionsResponse = await getQuestions(roomId);
-    if (questionsResponse.error) {
-      return { error: questionsResponse.error };
-    }
+    const randomIndex = Math.floor(Math.random() * questions.length);
+    const randomQuestion = questions[randomIndex];
+    const newQuestion: Question = {
+      id: `q${randomIndex}`,
+      text: randomQuestion,
+    };
 
-    const questions = questionsResponse.data;
-    if (questions?.length === 0) {
-      return { error: "No questions available" };
-    }
+    // データベースに質問を保存
+    const questionRef = ref(database, `rooms/${roomId}/currentQuestion`);
+    await set(questionRef, newQuestion);
 
-    const randomIndex = Math.floor(Math.random() * (questions?.length ?? 0));
-    return { data: questions![randomIndex] };
+    return { data: newQuestion };
   } catch (error) {
     console.error("Failed to get random question:", error);
     return { error: "Failed to get random question" };

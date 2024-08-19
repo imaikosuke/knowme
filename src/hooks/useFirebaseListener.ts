@@ -1,17 +1,23 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ref, onValue, off } from "firebase/database";
 import { database } from "@/lib/firebase";
 
 export function useFirebaseListener(path: string, callback: (data: any) => void) {
+  const callbackRef = useRef(callback);
+
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
   useEffect(() => {
     const dbRef = ref(database, path);
-    onValue(dbRef, (snapshot) => {
+    const handler = onValue(dbRef, (snapshot) => {
       const data = snapshot.val();
-      callback(data);
+      callbackRef.current(data);
     });
 
     return () => {
-      off(dbRef);
+      off(dbRef, "value", handler);
     };
-  }, [path, callback]);
+  }, [path]);
 }

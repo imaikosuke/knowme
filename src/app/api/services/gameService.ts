@@ -3,6 +3,7 @@ import { ref, get, set, update } from "firebase/database";
 import { GameState, Player, GuessSubmit, ApiResponse, Question, Room } from "@/types";
 import { getPlayers, selectRandomPlayer, updatePlayer } from "./playerService";
 import { createQuestion, getAnswers, getRandomQuestion } from "./questionService";
+import { questions } from "@/types/questions";
 
 export const startGame = async (roomId: string): Promise<ApiResponse<null>> => {
   try {
@@ -10,22 +11,13 @@ export const startGame = async (roomId: string): Promise<ApiResponse<null>> => {
     const gameStateRef = ref(database, `rooms/${roomId}/gameState`);
     const currentQuestionRef = ref(database, `rooms/${roomId}/currentQuestion`);
 
-    // 最初の質問を選択（この関数は別途実装が必要）
-    const firstQuestion = await selectRandomQuestion();
+    // ランダムに質問を選択
+    const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+    const firstQuestion: Question = {
+      id: `q${Date.now()}`, // ユニークなIDを生成
+      text: randomQuestion,
+    };
 
-    const questions = [
-      "What is your favorite color?",
-      "What is your favorite food?",
-      "What is your dream vacation destination?",
-      "If you could have any superpower, what would it be?",
-      "What's your favorite book or movie?",
-    ];
-
-    for (const questionText of questions) {
-      await createQuestion(roomId, questionText);
-    }
-
-    // 最初のプレイヤーを選択（この関数は別途実装が必要）
     const firstPlayer = await selectFirstPlayer(roomId);
 
     const initialGameState: GameState = {
@@ -34,9 +26,13 @@ export const startGame = async (roomId: string): Promise<ApiResponse<null>> => {
       currentQuestionId: firstQuestion.id,
     };
 
-    await update(roomRef, { status: "playing" });
-    await set(gameStateRef, initialGameState);
-    await set(currentQuestionRef, firstQuestion);
+    const updates = {
+      status: "playing",
+      gameState: initialGameState,
+      currentQuestion: { data: firstQuestion },
+    };
+
+    await update(roomRef, updates);
 
     return { data: null };
   } catch (error) {
@@ -44,15 +40,6 @@ export const startGame = async (roomId: string): Promise<ApiResponse<null>> => {
     return { error: "Failed to start game" };
   }
 };
-
-async function selectRandomQuestion(): Promise<Question> {
-  // ここに質問を選択するロジックを実装
-  // 例：
-  return {
-    id: "question1",
-    text: "What is your favorite color?",
-  };
-}
 
 async function selectFirstPlayer(roomId: string): Promise<{ id: string }> {
   const playersRef = ref(database, `rooms/${roomId}/players`);
@@ -182,16 +169,18 @@ export const moveToNextRound = async (roomId: string): Promise<ApiResponse<null>
     const currentGameState = gameStateSnapshot.val() as GameState;
 
     const nextPlayer = await selectRandomPlayer(roomId);
-    const nextQuestion = await getRandomQuestion(roomId);
 
-    if (nextQuestion.error || !nextQuestion.data) {
-      return { error: "No more questions available. Game over." };
-    }
+    // ランダムに新しい質問を選択
+    const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+    const nextQuestion: Question = {
+      id: `q${Date.now()}`, // ユニークなIDを生成
+      text: randomQuestion,
+    };
 
     const newGameState: GameState = {
       currentRound: currentGameState.currentRound + 1,
       currentPlayerId: nextPlayer.data!.id,
-      currentQuestionId: nextQuestion.data.id,
+      currentQuestionId: nextQuestion.id,
     };
 
     const playersSnapshot = await get(playersRef);
@@ -200,11 +189,13 @@ export const moveToNextRound = async (roomId: string): Promise<ApiResponse<null>
       players[playerId].hasGuessed = false;
     });
 
-    await update(roomRef, {
+    const updates = {
       gameState: newGameState,
-      currentQuestion: nextQuestion.data,
+      currentQuestion: { data: nextQuestion },
       players: players,
-    });
+    };
+
+    await update(roomRef, updates);
 
     return { data: null };
   } catch (error) {

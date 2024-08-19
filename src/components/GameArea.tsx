@@ -20,15 +20,17 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
   const [gameStatus, setGameStatus] = useState<"playing" | "finished" | "waiting">(room.status);
   const [winner, setWinner] = useState<string | null>(null);
 
-  useFirebaseListener(`rooms/${room.id}`, (data) => {
+  const handleRoomUpdate = useCallback((data: any) => {
     if (data) {
-      setCurrentQuestion(data.currentQuestion || null);
+      setCurrentQuestion(data.currentQuestion?.data || null);
       setAllAnswers(data.allAnswers?.[data.gameState.currentQuestionId] || []);
       setPlayers(data.players || {});
       setGameStatus(data.status);
       setWinner(data.winner || null);
     }
-  });
+  }, []);
+
+  useFirebaseListener(`rooms/${room.id}`, handleRoomUpdate);
 
   const handleMoveToNextRound = useCallback(async () => {
     if (gameStatus === "playing") {
@@ -102,10 +104,16 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
     return <div>次のお題を待っています...</div>;
   }
 
+  console.log("currentQuestion.id:", currentQuestion.id);
+  console.log("currentQuestion.text:", currentQuestion.text);
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-2">お題</h2>
-      <p className="mb-4">{currentQuestion.text}</p>
+      {currentQuestion && (
+        <div>
+          <h2 className="text-xl font-semibold mb-2">お題:</h2>
+          <p className="mb-4">{currentQuestion.text}</p>
+        </div>
+      )}
       {currentPlayer.id === room.gameState.currentPlayerId ? (
         <>
           <input
