@@ -25,6 +25,7 @@ export interface Answer {
 export interface Room {
   id: string;
   status: RoomStatus;
+  winner: string | null;
   players: { [playerId: string]: Player };
   questions: Question[];
   answers: { [questionId: string]: { [playerId: string]: string } };

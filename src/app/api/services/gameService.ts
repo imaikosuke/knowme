@@ -85,6 +85,10 @@ export const submitGuess = async (data: GuessSubmit): Promise<ApiResponse<boolea
   try {
     const { roomId, playerId, targetPlayerId, guessedAnswer } = data;
 
+    const roomRef = ref(database, `rooms/${roomId}`);
+    const roomSnapshot = await get(roomRef);
+    const room: Room = roomSnapshot.val();
+
     const answersResponse = await getAnswers(roomId, data.questionId);
     if (answersResponse.error) {
       return { error: answersResponse.error };
@@ -107,19 +111,22 @@ export const submitGuess = async (data: GuessSubmit): Promise<ApiResponse<boolea
       updates[`players/${playerId}/isEliminated`] = true;
     }
 
-    await update(ref(database, `rooms/${roomId}`), updates);
+    await update(roomRef, updates);
 
-    // Check if the game has ended
-    const roomSnapshot = await get(ref(database, `rooms/${roomId}`));
-    const room: Room = roomSnapshot.val();
-    const activePlayers = Object.values(room.players).filter((p: Player) => !p.isEliminated);
+    // ゲーム終了チェック
+    const updatedPlayersSnapshot = await get(ref(database, `rooms/${roomId}/players`));
+    const updatedPlayers: Player[] = updatedPlayersSnapshot.val();
+    const activePlayers = Object.values(updatedPlayers).filter((p) => !p.isEliminated);
 
     if (activePlayers.length === 1) {
-      // Game has ended
-      await update(ref(database, `rooms/${roomId}`), {
+      // ゲーム終了
+      await update(roomRef, {
         status: "finished",
         winner: activePlayers[0].id,
       });
+    } else if (Object.values(updatedPlayers).every((p: Player) => p.hasGuessed || p.isEliminated)) {
+      // 全プレイヤーが推測したか脱落した場合、次のラウンドへ
+      await moveToNextRound(roomId);
     }
 
     return { data: isCorrect };
@@ -159,7 +166,7 @@ export const moveToNextRound = async (roomId: string): Promise<ApiResponse<null>
     const room = roomSnapshot.val();
 
     if (room.status === "finished") {
-      return { data: null }; // Game has already ended, do nothing
+      return { data: null }; // ゲームが既に終了している場合は何もしない
     }
 
     const gameStateRef = ref(database, `rooms/${roomId}/gameState`);
@@ -168,7 +175,22 @@ export const moveToNextRound = async (roomId: string): Promise<ApiResponse<null>
     const gameStateSnapshot = await get(gameStateRef);
     const currentGameState = gameStateSnapshot.val() as GameState;
 
-    const nextPlayer = await selectRandomPlayer(roomId);
+    const playersSnapshot = await get(playersRef);
+    const players: Record<string, Player> = playersSnapshot.val();
+
+    // アクティブなプレイヤーのみを選択
+    const activePlayers: Player[] = Object.values(players).filter((p: Player) => !p.isEliminated);
+
+    if (activePlayers.length < 2) {
+      // アクティブなプレイヤーが1人以下の場合、ゲーム終了
+      await update(roomRef, {
+        status: "finished",
+        winner: activePlayers[0]?.id,
+      });
+      return { data: null };
+    }
+
+    const nextPlayer: Player = activePlayers[Math.floor(Math.random() * activePlayers.length)];
 
     // ランダムに新しい質問を選択
     const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
@@ -179,20 +201,19 @@ export const moveToNextRound = async (roomId: string): Promise<ApiResponse<null>
 
     const newGameState: GameState = {
       currentRound: currentGameState.currentRound + 1,
-      currentPlayerId: nextPlayer.data!.id,
+      currentPlayerId: nextPlayer.id,
       currentQuestionId: nextQuestion.id,
     };
 
-    const playersSnapshot = await get(playersRef);
-    const players = playersSnapshot.val();
-    Object.keys(players).forEach((playerId) => {
-      players[playerId].hasGuessed = false;
-    });
+    // プレイヤーの hasGuessed をリセット
+    const updatedPlayers = Object.fromEntries(
+      Object.entries(players).map(([id, player]) => [id, { ...player, hasGuessed: false }])
+    );
 
     const updates = {
       gameState: newGameState,
       currentQuestion: { data: nextQuestion },
-      players: players,
+      players: updatedPlayers,
     };
 
     await update(roomRef, updates);

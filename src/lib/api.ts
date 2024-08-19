@@ -110,7 +110,6 @@ export const submitAnswer = async (
 ): Promise<void> => {
   try {
     const answerRef = ref(database, `rooms/${roomId}/answers/${questionId}/${playerId}`);
-    console.log("answerRef", answerRef);
     await set(answerRef, answer);
   } catch (error) {
     console.error("Failed to submit answer:", error);

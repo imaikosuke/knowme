@@ -50,6 +50,13 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
     }
   }, [players, room.gameState.currentPlayerId, handleMoveToNextRound, gameStatus]);
 
+  useEffect(() => {
+    if (gameStatus === "finished") {
+      // ゲーム終了時の処理
+      console.log("Game finished. Winner:", winner);
+    }
+  }, [gameStatus, winner]);
+
   const handleSubmitAnswer = useCallback(async () => {
     if (answer && currentQuestion && gameStatus === "playing") {
       await submitAnswer({
@@ -91,10 +98,11 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
     ]
   );
 
+  console.log("gameStatus:", gameStatus);
   if (gameStatus === "finished") {
     return (
       <div>
-        <h2 className="text-xl font-semibold mb-2">\ ゲーム終了 /</h2>
+        <h2 className="text-xl font-semibold mb-2">ゲーム終了</h2>
         <p className="mb-4">勝者: {players[winner!]?.nickname}</p>
       </div>
     );
@@ -104,8 +112,6 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
     return <div>次のお題を待っています...</div>;
   }
 
-  console.log("currentQuestion.id:", currentQuestion.id);
-  console.log("currentQuestion.text:", currentQuestion.text);
   return (
     <div>
       {currentQuestion && (

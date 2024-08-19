@@ -35,47 +35,10 @@ export default function Game({ params }: GamePageProps) {
     }
   }, [router]);
 
-  // useEffect(() => {
-  //   const gameStateRef = ref(database, `rooms/${roomId}/gameState`);
-  //   const currentQuestionRef = ref(database, `rooms/${roomId}/currentQuestion`);
-
-  //   const gameStateListener = onValue(gameStateRef, (snapshot) => {
-  //     const data = snapshot.val();
-  //     console.log('Game state data:', data);
-  //     if (data) {
-  //       setGameState(data as GameState);
-  //     }
-  //   }, (error) => {
-  //     console.error('Error fetching game state:', error);
-  //     setError('Failed to fetch game state');
-  //   });
-
-  //   const questionListener = onValue(currentQuestionRef, (snapshot) => {
-  //     const data = snapshot.val();
-  //     console.log('Current question data:', data);
-  //     if (data) {
-  //       setCurrentQuestion(data as QuestionType);
-  //     }
-  //   }, (error) => {
-  //     console.error('Error fetching current question:', error);
-  //     setError('Failed to fetch current question');
-  //   });
-
-  //   // Clean up listeners
-  //   return () => {
-  //     off(gameStateRef);
-  //     off(currentQuestionRef);
-  //   };
-  // }, [roomId]);
-
   const handleSubmitAnswer = async (answer: string) => {
-    console.log("gameState", gameState);
-    console.log("currentQuestion", currentQuestion);
-    console.log("playerId", playerId);
     if (!gameState || !currentQuestion || !playerId) return;
 
     try {
-      console.log("Submitting answer:", answer);
       await submitAnswer(roomId, playerId, currentQuestion.id, answer);
       // Firebase will automatically update the game state
     } catch (err) {
@@ -95,12 +58,6 @@ export default function Game({ params }: GamePageProps) {
         currentQuestion.id,
         guess
       );
-
-      if (result) {
-        console.log("Correct guess!");
-      } else {
-        console.log("Incorrect guess!");
-      }
 
       const endResult = await checkGameEnd(roomId);
       if (endResult.winner) {
@@ -125,8 +82,6 @@ export default function Game({ params }: GamePageProps) {
     return <ResultDisplay winner={winner} onPlayAgain={handlePlayAgain} />;
   }
 
-  console.log("gameState", gameState);
-  console.log("currentQuestion", currentQuestion);
   if (!gameState || !currentQuestion) {
     return <div>Loading...</div>;
   }

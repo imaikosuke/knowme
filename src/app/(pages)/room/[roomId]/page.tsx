@@ -42,6 +42,7 @@ export default function RoomPage() {
     return <div>Loading...</div>;
   }
 
+  console.log("winner", room.winner);
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">ルーム: {roomId}</h1>
@@ -51,6 +52,12 @@ export default function RoomPage() {
       )}
       {room.status === "playing" && currentPlayer && (
         <GameArea room={room} currentPlayer={currentPlayer} />
+      )}
+      {room.status === "finished" && room.winner && (
+        <div>
+          <h2 className="text-xl font-semibold mb-2">ゲーム終了</h2>
+          <p className="mb-4">勝者: {room.players[room.winner]?.nickname}</p>
+        </div>
       )}
     </div>
   );
