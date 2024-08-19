@@ -1,20 +1,16 @@
 import { database } from "@/lib/firebase";
-import { ref, get, set, update } from "firebase/database";
+import { ref, get, update } from "firebase/database";
+import { getAnswers } from "./questionService";
 import { GameState, Player, GuessSubmit, ApiResponse, Question, Room } from "@/types";
-import { getPlayers, selectRandomPlayer, updatePlayer } from "./playerService";
-import { createQuestion, getAnswers, getRandomQuestion } from "./questionService";
 import { questions } from "@/types/questions";
 
 export const startGame = async (roomId: string): Promise<ApiResponse<null>> => {
   try {
     const roomRef = ref(database, `rooms/${roomId}`);
-    const gameStateRef = ref(database, `rooms/${roomId}/gameState`);
-    const currentQuestionRef = ref(database, `rooms/${roomId}/currentQuestion`);
 
-    // ランダムに質問を選択
     const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
     const firstQuestion: Question = {
-      id: `q${Date.now()}`, // ユニークなIDを生成
+      id: `q${Date.now()}`,
       text: randomQuestion,
     };
 
@@ -49,37 +45,6 @@ async function selectFirstPlayer(roomId: string): Promise<{ id: string }> {
   const randomIndex = Math.floor(Math.random() * playerIds.length);
   return { id: playerIds[randomIndex] };
 }
-
-export const getGameState = async (roomId: string): Promise<ApiResponse<GameState>> => {
-  try {
-    const gameStateRef = ref(database, `rooms/${roomId}/gameState`);
-    const snapshot = await get(gameStateRef);
-    const gameState = snapshot.val() as GameState | null;
-
-    if (!gameState) {
-      return { error: "Game state not found" };
-    }
-
-    return { data: gameState };
-  } catch (error) {
-    console.error("Failed to get game state:", error);
-    return { error: "Failed to get game state" };
-  }
-};
-
-export const updateGameState = async (
-  roomId: string,
-  newState: Partial<GameState>
-): Promise<ApiResponse<null>> => {
-  try {
-    const gameStateRef = ref(database, `rooms/${roomId}/gameState`);
-    await update(gameStateRef, newState);
-    return { data: null };
-  } catch (error) {
-    console.error("Failed to update game state:", error);
-    return { error: "Failed to update game state" };
-  }
-};
 
 export const submitGuess = async (data: GuessSubmit): Promise<ApiResponse<boolean>> => {
   try {
@@ -136,29 +101,6 @@ export const submitGuess = async (data: GuessSubmit): Promise<ApiResponse<boolea
   }
 };
 
-export const checkGameEnd = async (roomId: string): Promise<ApiResponse<Player | null>> => {
-  try {
-    const playersResponse = await getPlayers(roomId);
-    if (playersResponse.error) {
-      return { error: playersResponse.error };
-    }
-
-    const players = Object.values(playersResponse.data!);
-    const activePlayers = players.filter((player) => !player.isEliminated);
-
-    if (activePlayers.length === 1) {
-      const winner = activePlayers[0];
-      await update(ref(database, `rooms/${roomId}`), { status: "finished" });
-      return { data: winner };
-    }
-
-    return { data: null };
-  } catch (error) {
-    console.error("Failed to check game end:", error);
-    return { error: "Failed to check game end" };
-  }
-};
-
 export const moveToNextRound = async (roomId: string): Promise<ApiResponse<null>> => {
   try {
     const roomRef = ref(database, `rooms/${roomId}`);
@@ -195,7 +137,7 @@ export const moveToNextRound = async (roomId: string): Promise<ApiResponse<null>
     // ランダムに新しい質問を選択
     const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
     const nextQuestion: Question = {
-      id: `q${Date.now()}`, // ユニークなIDを生成
+      id: `q${Date.now()}`,
       text: randomQuestion,
     };
 
@@ -205,7 +147,6 @@ export const moveToNextRound = async (roomId: string): Promise<ApiResponse<null>
       currentQuestionId: nextQuestion.id,
     };
 
-    // プレイヤーの hasGuessed をリセット
     const updatedPlayers = Object.fromEntries(
       Object.entries(players).map(([id, player]) => [id, { ...player, hasGuessed: false }])
     );

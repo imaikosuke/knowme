@@ -2,7 +2,7 @@ import { ApiResponse } from "@/types";
 
 export async function generateAnswers(correctAnswer: string): Promise<ApiResponse<string[]>> {
   try {
-    const response = await fetch("/api/game/generate-answers", {
+    const response = await fetch("/api/generate-answers", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
