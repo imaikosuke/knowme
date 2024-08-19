@@ -21,7 +21,6 @@ export default function RoomPage() {
   });
 
   useEffect(() => {
-    // Set current player based on playerId in cookie
     const playerId = getCookie("playerId");
     if (room && room.players && playerId) {
       setCurrentPlayer(room.players[playerId]);
@@ -42,7 +41,6 @@ export default function RoomPage() {
     return <div>Loading...</div>;
   }
 
-  console.log("winner", room.winner);
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">ルーム: {roomId}</h1>

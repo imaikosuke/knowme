@@ -1,6 +1,6 @@
 import { database } from "@/lib/firebase";
 import { ref, set, get, push, update } from "firebase/database";
-import { Room, RoomCreate, RoomJoin, ApiResponse, RoomStatus } from "@/types";
+import { Room, RoomCreate, RoomJoin, ApiResponse } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
 export const createRoom = async (data: RoomCreate): Promise<ApiResponse<Room>> => {
@@ -25,6 +25,7 @@ export const createRoom = async (data: RoomCreate): Promise<ApiResponse<Room>> =
       questions: [],
       answers: {},
       allAnswers: {},
+      winner: null,
       gameState: {
         currentQuestionId: null,
         currentRound: 0,
@@ -73,36 +74,5 @@ export const joinRoom = async (data: RoomJoin): Promise<ApiResponse<Room>> => {
   } catch (error) {
     console.error("Failed to join room:", error);
     return { error: "Failed to join room" };
-  }
-};
-
-export const updateRoomStatus = async (
-  roomId: string,
-  status: RoomStatus
-): Promise<ApiResponse<null>> => {
-  try {
-    const roomRef = ref(database, `rooms/${roomId}`);
-    await update(roomRef, { status });
-    return { data: null };
-  } catch (error) {
-    console.error("Failed to update room status:", error);
-    return { error: "Failed to update room status" };
-  }
-};
-
-export const getRoom = async (roomId: string): Promise<ApiResponse<Room>> => {
-  try {
-    const roomRef = ref(database, `rooms/${roomId}`);
-    const roomSnapshot = await get(roomRef);
-
-    if (!roomSnapshot.exists()) {
-      return { error: "Room not found" };
-    }
-
-    const room = roomSnapshot.val() as Room;
-    return { data: room };
-  } catch (error) {
-    console.error("Failed to get room:", error);
-    return { error: "Failed to get room" };
   }
 };
