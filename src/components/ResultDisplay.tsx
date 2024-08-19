@@ -8,8 +8,8 @@ interface ResultDisplayProps {
 export default function ResultDisplay({ winner, onPlayAgain }: ResultDisplayProps) {
   return (
     <div className="text-center space-y-4">
-      <h2 className="text-3xl font-bold">Game Over!</h2>
-      <p className="text-xl">The winner is: {winner.nickname}</p>
+      <h2 className="text-3xl font-bold">ゲーム結果</h2>
+      <p className="text-xl">Winner: {winner.nickname}</p>
       <Button onClick={onPlayAgain}>Play Again</Button>
     </div>
   );

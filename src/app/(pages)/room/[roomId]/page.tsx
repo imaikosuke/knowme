@@ -21,10 +21,10 @@ export default function RoomPage() {
   });
 
   useEffect(() => {
-    // Set current player based on nickname in cookie
-    const nickname = getCookie("nickname");
-    if (room && room.players && nickname) {
-      setCurrentPlayer(room.players[nickname]);
+    // Set current player based on playerId in cookie
+    const playerId = getCookie("playerId");
+    if (room && room.players && playerId) {
+      setCurrentPlayer(room.players[playerId]);
     }
   }, [room]);
 
@@ -44,10 +44,10 @@ export default function RoomPage() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Room: {roomId}</h1>
+      <h1 className="text-2xl font-bold mb-4">ルーム: {roomId}</h1>
       <PlayerList players={room.players} />
       {room.status === "waiting" && currentPlayer?.isOwner && (
-        <Button onClick={handleStartGame}>Start Game</Button>
+        <Button onClick={handleStartGame}>ゲームを開始</Button>
       )}
       {room.status === "playing" && currentPlayer && (
         <GameArea room={room} currentPlayer={currentPlayer} />

@@ -1,21 +1,24 @@
 import { database } from "@/lib/firebase";
 import { ref, set, get, push, update } from "firebase/database";
 import { Room, RoomCreate, RoomJoin, ApiResponse, RoomStatus } from "@/types";
+import { v4 as uuidv4 } from "uuid";
 
 export const createRoom = async (data: RoomCreate): Promise<ApiResponse<Room>> => {
   try {
     const roomsRef = ref(database, "rooms");
     const newRoomRef = push(roomsRef);
     const roomId = newRoomRef.key as string;
+    const uniquePlayerId = uuidv4();
 
     const newRoom: Room = {
       id: roomId,
       status: "waiting",
       players: {
-        [data.nickname]: {
-          id: data.nickname,
+        [uniquePlayerId]: {
+          id: uniquePlayerId,
           nickname: data.nickname,
           isOwner: true,
+          hasGuessed: false,
           isEliminated: false,
         },
       },
@@ -52,13 +55,15 @@ export const joinRoom = async (data: RoomJoin): Promise<ApiResponse<Room>> => {
       return { error: "Room is not accepting new players" };
     }
 
+    const uniquePlayerId = uuidv4();
     const updatedPlayers = {
       ...room.players,
-      [data.nickname]: {
-        id: data.nickname,
+      [uniquePlayerId]: {
+        id: uniquePlayerId,
         nickname: data.nickname,
         isOwner: false,
         isEliminated: false,
+        hasGuessed: false,
       },
     };
 

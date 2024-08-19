@@ -30,8 +30,9 @@ export const createRoom = async (nickname: string): Promise<Room> => {
   if (!response.ok) {
     throw new Error("Failed to create room");
   }
-  const room = await response.json();
-  setCookie("playerId", room.players[nickname].id, { maxAge: 86400 }); // 24時間有効
+  const room: Room = await response.json();
+  const playerId = Object.keys(room.players)[0];
+  setCookie("playerId", playerId, { maxAge: 86400 }); // 24時間有効
   return room;
 };
 
@@ -45,7 +46,10 @@ export const joinRoom = async (roomId: string, nickname: string): Promise<Room> 
     throw new Error("Failed to join room");
   }
   const room = await response.json();
-  setCookie("playerId", room.players[nickname].id, { maxAge: 86400 }); // 24時間有効
+  const playerId = Object.keys(room.players).find((id) => room.players[id].nickname === nickname);
+  if (playerId) {
+    setCookie("playerId", playerId, { maxAge: 86400 }); // 24時間有効
+  }
   return room;
 };
 
@@ -131,6 +135,9 @@ export const submitGuess = async (
       const playerRef = ref(database, `rooms/${roomId}/players/${playerId}`);
       await update(playerRef, { isEliminated: true });
     }
+
+    const guessRef = ref(database, `rooms/${roomId}/players/${playerId}`);
+    await update(guessRef, { hasGuessed: true });
 
     return isCorrect;
   } catch (error) {

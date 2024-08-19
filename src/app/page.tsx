@@ -16,6 +16,8 @@ export default function Home() {
     if (!nickname) return;
     const result = await createRoom({ nickname });
     if (result.data) {
+      const playerId = Object.keys(result.data.players)[0];
+      setCookie("playerId", playerId);
       setCookie("nickname", nickname);
       router.push(`/room/${result.data.id}`);
     }
@@ -25,30 +27,36 @@ export default function Home() {
     if (!nickname || !roomId) return;
     const result = await joinRoom({ roomId, nickname });
     if (result.data) {
-      setCookie("nickname", nickname);
+      const playerId = Object.keys(result.data.players).find(
+        (id) => result.data!.players[id].nickname === nickname
+      );
+      if (playerId) {
+        setCookie("playerId", playerId);
+        setCookie("nickname", nickname);
+      }
       router.push(`/room/${roomId}`);
     }
   };
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Welcome to the Game</h1>
+      <h1 className="text-2xl font-bold mb-4">KnowMe?</h1>
       <Input
         type="text"
-        placeholder="Enter your nickname"
+        placeholder="ニックネームを入力"
         value={nickname}
         onChange={(e) => setNickname(e.target.value)}
         className="mb-4"
       />
       <div className="flex space-x-4">
-        <Button onClick={handleCreateRoom}>Create Room</Button>
+        <Button onClick={handleCreateRoom}>ルームを作成</Button>
         <Input
           type="text"
-          placeholder="Enter room ID"
+          placeholder="ルームIDを入力"
           value={roomId}
           onChange={(e) => setRoomId(e.target.value)}
         />
-        <Button onClick={handleJoinRoom}>Join Room</Button>
+        <Button onClick={handleJoinRoom}>ルームに参加</Button>
       </div>
     </div>
   );

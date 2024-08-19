@@ -74,7 +74,7 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
         if (result.error) {
           setGuessResult(`Error: ${result.error}`);
         } else {
-          setGuessResult(result.data ? "Correct guess!" : "Incorrect guess. You're eliminated.");
+          setGuessResult(result.data ? "正解!" : "不正解...");
           setGuessSubmitted(true);
         }
       }
@@ -92,19 +92,19 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
   if (gameStatus === "finished") {
     return (
       <div>
-        <h2 className="text-xl font-semibold mb-2">Game Over!</h2>
-        <p className="mb-4">Winner: {players[winner!]?.nickname}</p>
+        <h2 className="text-xl font-semibold mb-2">\ ゲーム終了 /</h2>
+        <p className="mb-4">勝者: {players[winner!]?.nickname}</p>
       </div>
     );
   }
 
   if (!currentQuestion) {
-    return <div>Waiting for the next question...</div>;
+    return <div>次のお題を待っています...</div>;
   }
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-2">Current Question:</h2>
+      <h2 className="text-xl font-semibold mb-2">お題</h2>
       <p className="mb-4">{currentQuestion.text}</p>
       {currentPlayer.id === room.gameState.currentPlayerId ? (
         <>
@@ -114,13 +114,13 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
             onChange={(e) => setAnswer(e.target.value)}
             className="border p-2 mb-2"
           />
-          <Button onClick={handleSubmitAnswer}>Submit Answer</Button>
+          <Button onClick={handleSubmitAnswer}>回答</Button>
         </>
       ) : (
         allAnswers.length > 0 &&
         !guessSubmitted && (
           <div>
-            <h3 className="text-lg font-semibold mb-2">Choose the correct answer:</h3>
+            <h3 className="text-lg font-semibold mb-2">真実だと思う回答を選択:</h3>
             {allAnswers.map((ans, index) => (
               <Button key={index} onClick={() => handleSubmitGuess(ans)} className="mr-2 mb-2">
                 {ans}
@@ -130,7 +130,7 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
         )
       )}
       {guessResult && <p className="mt-4 font-bold">{guessResult}</p>}
-      {guessSubmitted && <p className="mt-4">Waiting for other players to submit their guesses...</p>}
+      {guessSubmitted && <p className="mt-4">他のプレイヤーが回答するのを待っています...</p>}
     </div>
   );
 }
