@@ -20,7 +20,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
+      <body
+        className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}
+        style={{ backgroundImage: "url('/paper-background.png')" }}
+      >
         {children}
       </body>
     </html>
