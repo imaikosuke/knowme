@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Room, Player, Question } from "@/types";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { submitGuess, moveToNextRound } from "@/app/api/services/gameService";
 import { submitAnswer } from "@/app/api/services/questionService";
 import { useFirebaseListener } from "@/hooks/useFirebaseListener";
@@ -113,38 +114,50 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
   }
 
   return (
-    <div>
+    <div className="space-y-4">
       {currentQuestion && (
-        <div>
-          <h2 className="text-xl font-semibold mb-2">お題:</h2>
-          <p className="mb-4">{currentQuestion.text}</p>
+        <div className="bg-white bg-opacity-50 rounded-lg p-4">
+          <h2 className="text-xl font-bold mb-2">お題:</h2>
+          <p className="mb-4 text-lg font-bold">{currentQuestion.text}</p>
         </div>
       )}
       {currentPlayer.id === room.gameState.currentPlayerId ? (
-        <>
-          <input
+        <div className="space-y-2">
+          <Input
             type="text"
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
-            className="border p-2 mb-2"
+            placeholder="あなたの回答を入力"
+            className="w-full font-bold"
           />
-          <Button onClick={handleSubmitAnswer}>回答</Button>
-        </>
+          <Button
+            onClick={handleSubmitAnswer}
+            className="w-full font-bold bg-[#FF7F7F] hover:bg-[#FF9999] text-white"
+          >
+            回答を送信
+          </Button>
+        </div>
       ) : (
         allAnswers.length > 0 &&
         !guessSubmitted && (
-          <div>
-            <h3 className="text-lg font-semibold mb-2">真実だと思う回答を選択:</h3>
+          <div className="space-y-2">
+            <h3 className="text-lg font-bold mb-2">真実だと思う回答を選択:</h3>
             {allAnswers.map((ans, index) => (
-              <Button key={index} onClick={() => handleSubmitGuess(ans)} className="mr-2 mb-2">
+              <Button
+                key={index}
+                onClick={() => handleSubmitGuess(ans)}
+                className="w-full mb-2 font-bold bg-[#7FC8FF] hover:bg-[#99D6FF] text-white"
+              >
                 {ans}
               </Button>
             ))}
           </div>
         )
       )}
-      {guessResult && <p className="mt-4 font-bold">{guessResult}</p>}
-      {guessSubmitted && <p className="mt-4">他のプレイヤーが回答するのを待っています...</p>}
+      {guessResult && <p className="mt-4 font-bold text-center">{guessResult}</p>}
+      {guessSubmitted && (
+        <p className="mt-4 text-center font-bold">他のプレイヤーが回答するのを待っています...</p>
+      )}
     </div>
   );
 }
