@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createRoom, joinRoom } from "@/app/api/services/roomService";
 import { setCookie } from "@/lib/cookies";
+import Image from "next/image";
 
 export default function Home() {
   const [nickname, setNickname] = useState<string>("");
@@ -18,7 +19,6 @@ export default function Home() {
     if (result.data) {
       const playerId = Object.keys(result.data.players)[0];
       setCookie("playerId", playerId);
-      setCookie("nickname", nickname);
       router.push(`/room/${result.data.id}`);
     }
   };
@@ -32,31 +32,41 @@ export default function Home() {
       );
       if (playerId) {
         setCookie("playerId", playerId);
-        setCookie("nickname", nickname);
       }
       router.push(`/room/${roomId}`);
     }
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">KnowMe?</h1>
-      <Input
-        type="text"
-        placeholder="ニックネームを入力"
-        value={nickname}
-        onChange={(e) => setNickname(e.target.value)}
-        className="mb-4"
-      />
-      <div className="flex space-x-4">
-        <Button onClick={handleCreateRoom}>ルームを作成</Button>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-cover bg-center">
+      <div className="w-full max-w-md p-6 flex flex-col items-center">
+        <Image src="/knowme-logo.png" alt="KnowMe Logo" width={300} height={150} className="mb-16" />
+        <Input
+          type="text"
+          placeholder="ニックネームを入力"
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          className="mb-8 w-full font-bold"
+        />
+        <Button
+          onClick={handleCreateRoom}
+          className="mb-8 w-full font-bold bg-[#FF7F7F] hover:bg-[#FF9999] text-white"
+        >
+          ルームを作成
+        </Button>
         <Input
           type="text"
           placeholder="ルームIDを入力"
           value={roomId}
           onChange={(e) => setRoomId(e.target.value)}
+          className="mb-8 w-full font-bold"
         />
-        <Button onClick={handleJoinRoom}>ルームに参加</Button>
+        <Button
+          onClick={handleJoinRoom}
+          className="w-full font-bold bg-[#7FC8FF] hover:bg-[#99D6FF] text-white"
+        >
+          ルームに参加
+        </Button>
       </div>
     </div>
   );
