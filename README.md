@@ -1,17 +1,17 @@
-# KnowMe?
+# 🎮 KnowMe?
 
-KnowMe?は、ゲーム参加者の質問の回答を推測し合う楽しいオンラインゲームです。
+KnowMe?は、ゲーム参加者の質問の回答を推測し合う楽しいオンラインゲームです！
 - 友達や家族、同僚がお互いをどれだけ知っているかテストできる
 - 初めましての人たちでもお互いのことを知るきっかけになる
 
-## 特徴
+## 🚀 特徴
 
 - リアルタイムマルチプレイヤーゲーム
 - 質問の嘘の回答を自動生成（OpenAI APIを使用）
 - 簡単なルーム作成とゲーム参加
 - レスポンシブデザイン
 
-## 技術スタック
+## 🌟 技術スタック
 
 - [Next.js](https://nextjs.org/)
 - [TypeScript](https://www.typescriptlang.org/)
@@ -19,11 +19,11 @@ KnowMe?は、ゲーム参加者の質問の回答を推測し合う楽しいオ�
 - [Tailwind CSS](https://tailwindcss.com/)
 - [shadcn/ui](https://ui.shadcn.com/)
 
-## セットアップ
+## ⚒️ セットアップ
 
 1. リポジトリをクローンします：
    ```
-   git clone https://github.com/yourusername/knowme.git
+   git clone https://github.com/imaikosuke/knowme.git
    cd knowme
    ```
 
@@ -51,7 +51,7 @@ KnowMe?は、ゲーム参加者の質問の回答を推測し合う楽しいオ�
 
 5. ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。
 
-## ゲームの遊び方
+## 📃 ゲームの遊び方
 
 1. ホームページでニックネームを入力し、新しいルームを作成するか既存のルームに参加します。
 2. ルーム内で他のプレイヤーを待ちます。
