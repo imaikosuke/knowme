@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { startGame } from "@/app/api/services/gameService";
@@ -11,6 +11,7 @@ import { Player, Room } from "@/types";
 import { getCookie } from "@/lib/cookies";
 import Image from "next/image";
 import toast, { Toaster } from "react-hot-toast";
+import GameResult from "@/components/GameResult";
 
 export default function RoomPage() {
   const params = useParams();
@@ -67,24 +68,24 @@ export default function RoomPage() {
           className="mb-8 mx-auto"
         />
         <div className="bg-white bg-opacity-80 rounded-lg p-6 shadow-lg">
-          <h1 className="text-2xl font-bold mb-4 text-center">ルーム: {roomId}</h1>
-          <PlayerList players={room.players} />
+          <h1 className="text-2xl font-bold mb-4 text-center">Room ID: {roomId}</h1>
           {room.status === "waiting" && currentPlayer?.isOwner && (
-            <Button
-              onClick={handleStartGame}
-              className="w-full bg-[#FF7F7F] hover:bg-[#FF9999] text-white mb-4"
-            >
-              ゲームを開始
-            </Button>
+            <>
+              <PlayerList players={room.players} />
+              <Button
+                onClick={handleStartGame}
+                className="w-full font-bold bg-[#FF7F7F] hover:bg-[#FF9999] text-white mb-4"
+              >
+                ゲームを開始
+              </Button>
+            </>
           )}
+          {room.status === "waiting" && !currentPlayer?.isOwner && <PlayerList players={room.players} />}
           {room.status === "playing" && currentPlayer && (
             <GameArea room={room} currentPlayer={currentPlayer} />
           )}
           {room.status === "finished" && room.winner && (
-            <div className="text-center">
-              <h2 className="text-xl font-semibold mb-2">ゲーム終了</h2>
-              <p className="mb-4">勝者: {room.players[room.winner]?.nickname}</p>
-            </div>
+            <GameResult winner={room.players[room.winner]} players={room.players} />
           )}
         </div>
       </div>

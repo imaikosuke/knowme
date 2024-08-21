@@ -19,7 +19,6 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
   const [guessSubmitted, setGuessSubmitted] = useState<boolean>(false);
   const [players, setPlayers] = useState<Record<string, Player>>({});
   const [gameStatus, setGameStatus] = useState<"playing" | "finished" | "waiting">(room.status);
-  const [winner, setWinner] = useState<string | null>(null);
 
   const handleRoomUpdate = useCallback((data: any) => {
     if (data) {
@@ -27,7 +26,6 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
       setAllAnswers(data.allAnswers?.[data.gameState.currentQuestionId] || []);
       setPlayers(data.players || {});
       setGameStatus(data.status);
-      setWinner(data.winner || null);
     }
   }, []);
 
@@ -50,13 +48,6 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
       handleMoveToNextRound();
     }
   }, [players, room.gameState.currentPlayerId, handleMoveToNextRound, gameStatus]);
-
-  useEffect(() => {
-    if (gameStatus === "finished") {
-      // ゲーム終了時の処理
-      console.log("Game finished. Winner:", winner);
-    }
-  }, [gameStatus, winner]);
 
   const handleSubmitAnswer = useCallback(async () => {
     if (answer && currentQuestion && gameStatus === "playing") {
@@ -98,16 +89,6 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
       gameStatus,
     ]
   );
-
-  console.log("gameStatus:", gameStatus);
-  if (gameStatus === "finished") {
-    return (
-      <div>
-        <h2 className="text-xl font-semibold mb-2">ゲーム終了</h2>
-        <p className="mb-4">勝者: {players[winner!]?.nickname}</p>
-      </div>
-    );
-  }
 
   if (!currentQuestion) {
     return <div>次のお題を待っています...</div>;
