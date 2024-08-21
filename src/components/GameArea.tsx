@@ -98,36 +98,48 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
     <div className="space-y-4">
       {currentQuestion && (
         <div className="bg-white bg-opacity-50 rounded-lg p-4">
-          <h2 className="text-xl font-bold mb-2">お題:</h2>
-          <p className="mb-4 text-lg font-bold">{currentQuestion.text}</p>
+          <h2 className="text-xl font-semibold mb-2">お題:</h2>
+          <p className="mb-4 text-lg">{currentQuestion.text}</p>
         </div>
       )}
-      {currentPlayer.id === room.gameState.currentPlayerId ? (
+      {currentPlayer.isEliminated && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
+          <p className="font-bold">あなたは脱落しました</p>
+          <p>引き続きゲームを観戦できますが、回答はできません。</p>
+        </div>
+      )}
+      {currentPlayer.id === room.gameState.currentPlayerId && !currentPlayer.isEliminated ? (
         <div className="space-y-2">
           <Input
             type="text"
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             placeholder="あなたの回答を入力"
-            className="w-full font-bold"
+            className="w-full"
           />
           <Button
             onClick={handleSubmitAnswer}
-            className="w-full font-bold bg-[#FF7F7F] hover:bg-[#FF9999] text-white"
+            className="w-full bg-[#FF7F7F] hover:bg-[#FF9999] text-white"
           >
             回答を送信
           </Button>
         </div>
       ) : (
-        allAnswers.length > 0 &&
-        !guessSubmitted && (
+        allAnswers.length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-lg font-bold mb-2">真実だと思う回答を選択:</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              {currentPlayer.isEliminated ? "現在の選択肢:" : "真実だと思う回答を選択:"}
+            </h3>
             {allAnswers.map((ans, index) => (
               <Button
                 key={index}
-                onClick={() => handleSubmitGuess(ans)}
-                className="w-full mb-2 font-bold bg-[#7FC8FF] hover:bg-[#99D6FF] text-white"
+                onClick={() => !currentPlayer.isEliminated && !guessSubmitted && handleSubmitGuess(ans)}
+                className={`w-full mb-2 ${
+                  currentPlayer.isEliminated
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                    : "bg-[#7FC8FF] hover:bg-[#99D6FF] text-white"
+                }`}
+                disabled={currentPlayer.isEliminated || guessSubmitted}
               >
                 {ans}
               </Button>
@@ -135,10 +147,8 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
           </div>
         )
       )}
-      {guessResult && <p className="mt-4 font-bold text-center">{guessResult}</p>}
-      {guessSubmitted && (
-        <p className="mt-4 text-center font-bold">他のプレイヤーが回答するのを待っています...</p>
-      )}
+      {guessResult && !currentPlayer.isEliminated &&<p className="mt-4 font-bold text-center">{guessResult}</p>}
+      {guessSubmitted && <p className="mt-4 text-center">他のプレイヤーが回答するのを待っています...</p>}
     </div>
   );
 }
