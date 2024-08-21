@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { startGame } from "@/app/api/services/gameService";
@@ -68,19 +68,20 @@ export default function RoomPage() {
           className="mb-8 mx-auto"
         />
         <div className="bg-white bg-opacity-80 rounded-lg p-6 shadow-lg">
-          <h1 className="text-2xl font-bold mb-4 text-center">Room ID: {roomId}</h1>
-          {room.status === "waiting" && currentPlayer?.isOwner && (
+          {room.status === "waiting" && (
             <>
+              <h1 className="text-2xl font-bold mb-4 text-center">Room ID: {roomId}</h1>
               <PlayerList players={room.players} />
-              <Button
-                onClick={handleStartGame}
-                className="w-full font-bold bg-[#FF7F7F] hover:bg-[#FF9999] text-white mb-4"
-              >
-                ゲームを開始
-              </Button>
+              {currentPlayer?.isOwner && (
+                <Button
+                  onClick={handleStartGame}
+                  className="w-full font-bold bg-[#FF7F7F] hover:bg-[#FF9999] text-white mb-4"
+                >
+                  ゲームを開始
+                </Button>
+              )}
             </>
           )}
-          {room.status === "waiting" && !currentPlayer?.isOwner && <PlayerList players={room.players} />}
           {room.status === "playing" && currentPlayer && (
             <GameArea room={room} currentPlayer={currentPlayer} />
           )}
