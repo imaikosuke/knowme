@@ -147,8 +147,8 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
           </div>
         )
       )}
-      {guessResult && !currentPlayer.isEliminated &&<p className="mt-4 font-bold text-center">{guessResult}</p>}
-      {guessSubmitted && <p className="mt-4 text-center">他のプレイヤーが回答するのを待っています...</p>}
+      {currentPlayer.id !== room.gameState.currentPlayerId && guessResult && !currentPlayer.isEliminated &&<p className="mt-4 font-bold text-center">{guessResult}</p>}
+      {currentPlayer.id !== room.gameState.currentPlayerId && guessSubmitted && <p className="mt-4 text-center">他のプレイヤーが回答するのを待っています...</p>}
     </div>
   );
 }

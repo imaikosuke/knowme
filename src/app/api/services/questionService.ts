@@ -10,7 +10,12 @@ export const submitAnswer = async (data: AnswerSubmit): Promise<ApiResponse<null
 
     await update(answerRef, { [playerId]: answer });
 
-    const fakeAnswersResponse = await generateAnswers(answer);
+    // 質問文を取得
+    const questionRef = ref(database, `rooms/${roomId}/currentQuestion/data`);
+    const questionSnapshot = await get(questionRef);
+    const questionText: string = questionSnapshot.val().text;
+
+    const fakeAnswersResponse = await generateAnswers(answer, questionText);
     if (fakeAnswersResponse.error) {
       return { error: fakeAnswersResponse.error };
     }
