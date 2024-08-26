@@ -1,13 +1,16 @@
 import { ApiResponse } from "@/types";
 
-export async function generateAnswers(correctAnswer: string): Promise<ApiResponse<string[]>> {
+export async function generateAnswers(
+  correctAnswer: string,
+  questionText: string
+): Promise<ApiResponse<string[]>> {
   try {
     const response = await fetch("/api/generate-answers", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ correctAnswer }),
+      body: JSON.stringify({ correctAnswer, questionText }),
     });
 
     if (!response.ok) {
