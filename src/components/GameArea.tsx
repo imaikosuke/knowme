@@ -166,7 +166,7 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
                 key={index}
                 onClick={() => !currentPlayer.isEliminated && !guessSubmitted && handleSubmitGuess(ans)}
                 className={`w-full mb-2 ${
-                  currentPlayer.isEliminated
+                  showCountdown
                     ? "bg-gray-300 text-gray-600 cursor-not-allowed"
                     : "bg-[#7FC8FF] hover:bg-[#99D6FF] text-white"
                 }`}
