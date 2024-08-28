@@ -12,6 +12,7 @@ import { getCookie } from "@/lib/cookies";
 import Image from "next/image";
 import toast, { Toaster } from "react-hot-toast";
 import GameResult from "@/components/GameResult";
+import Countdown from "@/components/Countdown";
 
 export default function RoomPage() {
   const params = useParams();
@@ -19,10 +20,16 @@ export default function RoomPage() {
   const roomId = Array.isArray(params.roomId) ? params.roomId[0] : params.roomId;
   const [room, setRoom] = useState<Room | null>(null);
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
+  const [showCountdown, setShowCountdown] = useState<boolean>(false);
+  const [showResult, setShowResult] = useState<boolean>(false);
 
   useFirebaseListener(`rooms/${roomId}`, (data) => {
     if (data) {
       setRoom(data);
+      // ゲームが終了状態になった場合、カウントダウンを開始
+      if (data.status === "finished" && !showCountdown && !showResult) {
+        setShowCountdown(true);
+      }
     } else {
       toast.error("ルームが見つかりません");
       router.push("/");
@@ -50,6 +57,11 @@ export default function RoomPage() {
         toast.error("ゲームの開始に失敗しました");
       }
     }
+  };
+
+  const handleCountdownComplete = () => {
+    setShowCountdown(false);
+    setShowResult(true);
   };
 
   if (!room) {
@@ -85,7 +97,15 @@ export default function RoomPage() {
           {room.status === "playing" && currentPlayer && (
             <GameArea room={room} currentPlayer={currentPlayer} />
           )}
-          {room.status === "finished" && room.winner && (
+          {showCountdown && currentPlayer && (
+            <div>
+              <GameArea room={room} currentPlayer={currentPlayer} />
+              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+                <Countdown onComplete={handleCountdownComplete} />
+              </div>
+            </div>
+          )}
+          {showResult && room.status === "finished" && room.winner && (
             <GameResult winner={room.players[room.winner]} players={room.players} />
           )}
         </div>
