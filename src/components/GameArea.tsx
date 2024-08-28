@@ -7,6 +7,8 @@ import { submitAnswer } from "@/app/api/services/questionService";
 import { useFirebaseListener } from "@/hooks/useFirebaseListener";
 import Countdown from "./Countdown";
 import { waitFor } from "@/utils/waitFor";
+import toast from "react-hot-toast";
+import Image from "next/image";
 
 type GameAreaProps = {
   room: Room;
@@ -17,7 +19,7 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [answer, setAnswer] = useState("");
   const [allAnswers, setAllAnswers] = useState<string[]>([]);
-  const [guessResult, setGuessResult] = useState<string | null>(null);
+  const [isCorrect, setIsCorrect] = useState<boolean>(false);
   const [guessSubmitted, setGuessSubmitted] = useState<boolean>(false);
   const [players, setPlayers] = useState<Record<string, Player>>({});
   const [gameStatus, setGameStatus] = useState<"playing" | "finished" | "waiting">(room.status);
@@ -47,7 +49,7 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
       setIsAllPlayersGuessed(false);
       setWasEliminatedInPreviousRound(isNowEliminated);
       await moveToNextRound(room.id);
-      setGuessResult(null);
+      setIsCorrect(false);
       setGuessSubmitted(false);
     }
   }, [room.id, gameStatus, isNowEliminated]);
@@ -87,12 +89,11 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
         });
 
         if (result.error) {
-          setGuessResult(`Error: ${result.error}`);
+          toast.error("エラーが発生しました。もう一度お試しください。");
         } else {
           if (result.data) {
-            setGuessResult("正解!");
+            setIsCorrect(true);
           } else {
-            setGuessResult("不正解");
             setIsNowEliminated(true);
           }
           setGuessSubmitted(true);
@@ -133,6 +134,14 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
           <p className="mb-4 text-lg">{currentQuestion.text}</p>
         </div>
       )}
+      {isAllPlayersGuessed &&
+        currentPlayer.id != room.gameState.currentPlayerId &&
+        isCorrect &&
+        !showEliminationMessage && (
+          <div className="mt-4 flex justify-center items-center">
+            <Image src="/correct.png" alt="correct" width={100} height={100} className="mx-auto" />
+          </div>
+        )}
       {showEliminationMessage && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
           <p className="font-bold">あなたは脱落しました</p>
@@ -183,10 +192,6 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
           <Countdown onComplete={handleCountdownEnd} />
         </div>
       )}
-      {isAllPlayersGuessed &&
-        currentPlayer.id != room.gameState.currentPlayerId &&
-        guessResult &&
-        !showEliminationMessage && <p className="mt-4 font-bold text-center">{guessResult}</p>}
       {!isAllPlayersGuessed && currentPlayer.id !== room.gameState.currentPlayerId && guessSubmitted && (
         <p className="mt-4 text-center">他のプレイヤーが回答するのを待っています...</p>
       )}
