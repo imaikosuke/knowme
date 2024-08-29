@@ -5,6 +5,12 @@ import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { useRouter } from "next/navigation";
 
+const XLogo = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
 interface GameResultProps {
   winner: Player;
   players: Record<string, Player>;
@@ -21,6 +27,12 @@ const GameResult: React.FC<GameResultProps> = ({ winner, players }) => {
       origin: { y: 0.6 },
     });
   }, []);
+
+  const handleShareOnX = () => {
+    const tweetText = `🏆 ${winner.nickname} さんが勝利しました！\n\n#KnowMeGame`;
+    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+    window.open(tweetUrl, "_blank");
+  };
 
   return (
     <div className="text-center p-8 bg-white rounded-lg shadow-lg">
@@ -40,14 +52,20 @@ const GameResult: React.FC<GameResultProps> = ({ winner, players }) => {
           ))}
         </ul>
       </div>
-      <Button
-        onClick={() => {
-          router.push("/");
-        }}
-        className="bg-[#FF7F7F] hover:bg-[#FF9999] text-white"
-      >
-        トップに戻る
-      </Button>
+      <div className="flex justify-center space-x-4">
+        <Button
+          onClick={() => {
+            router.push("/");
+          }}
+          className="bg-[#FF7F7F] font-bold hover:bg-[#FF9999] text-white"
+        >
+          トップに戻る
+        </Button>
+        <Button onClick={handleShareOnX} className="bg-gray-700 font-bold hover:bg-gray-600 text-white">
+          <XLogo />
+          <span className="ml-2">共有</span>
+        </Button>
+      </div>
     </div>
   );
 };
