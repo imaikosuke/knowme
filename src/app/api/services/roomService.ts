@@ -3,11 +3,28 @@ import { ref, set, get, push, update } from "firebase/database";
 import { Room, RoomCreate, RoomJoin, ApiResponse } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
+const generateRoomId = (): string => {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+};
+
+const isRoomIdUnique = async (roomId: string): Promise<boolean> => {
+  const roomRef = ref(database, `rooms/${roomId}`);
+  const snapshot = await get(roomRef);
+  return !snapshot.exists();
+};
+
+const getUniqueRoomId = async (): Promise<string> => {
+  let roomId = generateRoomId();
+  while (!(await isRoomIdUnique(roomId))) {
+    roomId = generateRoomId();
+  }
+  return roomId;
+};
+
 export const createRoom = async (data: RoomCreate): Promise<ApiResponse<Room>> => {
   try {
-    const roomsRef = ref(database, "rooms");
-    const newRoomRef = push(roomsRef);
-    const roomId = newRoomRef.key as string;
+    const roomId = await getUniqueRoomId();
+    const roomRef = ref(database, `rooms/${roomId}`);
     const uniquePlayerId = uuidv4();
 
     const newRoom: Room = {
@@ -33,7 +50,7 @@ export const createRoom = async (data: RoomCreate): Promise<ApiResponse<Room>> =
       },
     };
 
-    await set(newRoomRef, newRoom);
+    await set(roomRef, newRoom);
     return { data: newRoom };
   } catch (error) {
     console.error("Failed to create room:", error);
@@ -68,7 +85,7 @@ export const joinRoom = async (data: RoomJoin): Promise<ApiResponse<Room>> => {
       },
     };
 
-    await update(roomRef, { players: updatedPlayers });
+    await set(ref(database, `rooms/${data.roomId}/players`), updatedPlayers);
 
     return { data: { ...room, players: updatedPlayers } };
   } catch (error) {
