@@ -9,6 +9,8 @@ import Countdown from "./Countdown";
 import { waitFor } from "@/utils/waitFor";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import CountUp from "react-countup";
+import { User } from "lucide-react";
 
 type GameAreaProps = {
   room: Room;
@@ -28,6 +30,13 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
   const [isNowEliminated, setIsNowEliminated] = useState<boolean>(false);
   const [wasEliminatedInPreviousRound, setWasEliminatedInPreviousRound] = useState<boolean>(false);
   const [showEliminationMessage, setShowEliminationMessage] = useState<boolean>(false);
+  const [remainingPlayers, setRemainingPlayers] = useState<number>(0);
+  const [isCountingDown, setIsCountingDown] = useState<boolean>(false);
+  const [pendingPlayerCount, setPendingPlayerCount] = useState<number | null>(null);
+  const [displayedPlayerCount, setDisplayedPlayerCount] = useState<number>(0);
+  const [actualPlayerCount, setActualPlayerCount] = useState<number>(0);
+  const [shouldUpdatePlayerCount, setShouldUpdatePlayerCount] = useState<boolean>(false);
+  const [isGameJustStarted, setIsGameJustStarted] = useState<boolean>(true);
 
   const handleRoomUpdate = useCallback((data: any) => {
     if (data) {
@@ -40,11 +49,50 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
 
   useFirebaseListener(`rooms/${room.id}`, handleRoomUpdate);
 
+  useEffect(() => {
+    const activePlayers = Object.values(players).filter((player) => !player.isEliminated);
+    const newActualCount = activePlayers.length;
+    setActualPlayerCount(newActualCount);
+
+    if (isGameJustStarted) {
+      setDisplayedPlayerCount(newActualCount);
+      setIsGameJustStarted(false);
+    }
+
+    // ゲームが終了状態になった場合、表示を「？」にする
+    if (gameStatus === "finished") {
+      setDisplayedPlayerCount(-1); // -1 を「？」表示のフラグとして使用
+    }
+  }, [players, isGameJustStarted, gameStatus]);
+
+  useEffect(() => {
+    const allPlayersGuessed = Object.values(players).every(
+      (player) =>
+        player.id === room.gameState.currentPlayerId || player.hasGuessed || player.isEliminated
+    );
+
+    if (allPlayersGuessed && gameStatus === "playing" && actualPlayerCount > 1) {
+      setDisplayedPlayerCount(actualPlayerCount);
+    }
+  }, [players, room.gameState.currentPlayerId, gameStatus, actualPlayerCount]);
+
+  useEffect(() => {
+    if (shouldUpdatePlayerCount) {
+      setDisplayedPlayerCount(actualPlayerCount);
+    }
+  }, [shouldUpdatePlayerCount, actualPlayerCount]);
+
   const handleMoveToNextRound = useCallback(async () => {
     if (gameStatus === "playing") {
+      setShowCountdown(true);
       await waitFor(3);
       setShowCountdown(false);
       setIsAllPlayersGuessed(true);
+      if (actualPlayerCount > 1) {
+        setDisplayedPlayerCount(actualPlayerCount);
+      } else {
+        setDisplayedPlayerCount(-1); // 最後の1人になったら「？」を表示
+      }
       await waitFor(3);
       setIsAllPlayersGuessed(false);
       setWasEliminatedInPreviousRound(isNowEliminated);
@@ -52,7 +100,7 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
       setIsCorrect(false);
       setGuessSubmitted(false);
     }
-  }, [room.id, gameStatus, isNowEliminated]);
+  }, [room.id, gameStatus, isNowEliminated, actualPlayerCount]);
 
   useEffect(() => {
     const allPlayersGuessed = Object.values(players).every(
@@ -60,10 +108,32 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
         player.id === room.gameState.currentPlayerId || player.hasGuessed || player.isEliminated
     );
     if (allPlayersGuessed && Object.keys(players).length > 0 && gameStatus === "playing") {
+      handleCountdownStart();
       setShowCountdown(true);
       handleMoveToNextRound();
     }
   }, [players, room.gameState.currentPlayerId, handleMoveToNextRound, gameStatus]);
+
+  useEffect(() => {
+    const activePlayers = Object.values(players).filter((player) => !player.isEliminated);
+    setRemainingPlayers(activePlayers.length);
+  }, [players, remainingPlayers]);
+
+  useEffect(() => {
+    const activePlayers = Object.values(players).filter((player) => !player.isEliminated);
+    const newCount = activePlayers.length;
+
+    if (isCountingDown) {
+      setPendingPlayerCount(newCount);
+    } else {
+      setRemainingPlayers(newCount);
+      setPendingPlayerCount(null);
+    }
+  }, [players, isCountingDown, remainingPlayers]);
+
+  const handleCountdownStart = () => {
+    setIsCountingDown(true);
+  };
 
   const handleSubmitAnswer = useCallback(async () => {
     if (answer && currentQuestion && gameStatus === "playing") {
@@ -118,9 +188,13 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
     }
   }, [isAllPlayersGuessed, isNowEliminated, wasEliminatedInPreviousRound]);
 
-  const handleCountdownEnd = () => {
+  const handleCountdownEnd = useCallback(() => {
+    setIsCountingDown(false);
+    if (pendingPlayerCount !== null) {
+      setRemainingPlayers(pendingPlayerCount);
+    }
     setShowCountdown(false);
-  };
+  }, [pendingPlayerCount]);
 
   if (!currentQuestion) {
     return <div>次のお題を待っています...</div>;
@@ -128,11 +202,28 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
 
   return (
     <div className="space-y-4">
-      {currentQuestion && (
-        <div className="bg-white bg-opacity-50 rounded-lg p-4">
-          <h2 className="text-xl font-semibold mb-2">お題:</h2>
-          <p className="mb-4 text-lg">{currentQuestion.text}</p>
+      <div className="bg-white bg-opacity-50 rounded-lg p-4 flex justify-between items-center">
+        <h2 className="text-xl font-semibold">お題:</h2>
+        <div className="bg-blue-500 text-white px-3 py-1 rounded-full flex items-center space-x-1">
+          <span>残り</span>
+          {!showCountdown && !isAllPlayersGuessed && displayedPlayerCount > 0 ? (
+            <CountUp
+              start={0}
+              end={displayedPlayerCount}
+              duration={2}
+              separator=","
+            >
+              {({ countUpRef }) => <span ref={countUpRef} className="font-bold mx-1" />}
+            </CountUp>
+          ) : (
+            <p className="font-bold mx-1">？</p>
+          )}
+          <span>人</span>
+          <User size={16} className="ml-1" />
         </div>
+      </div>
+      {currentQuestion && (
+        <p className="mb-4 text-lg bg-white bg-opacity-70 rounded-lg p-4">{currentQuestion.text}</p>
       )}
       {isAllPlayersGuessed &&
         currentPlayer.id != room.gameState.currentPlayerId &&
