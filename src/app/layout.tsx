@@ -13,6 +13,13 @@ export const metadata: Metadata = {
   description: "KnowMe? is a web app game",
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: 'no',
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{

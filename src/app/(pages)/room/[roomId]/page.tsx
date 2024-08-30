@@ -106,7 +106,7 @@ export default function RoomPage() {
             </div>
           )}
           {showResult && room.status === "finished" && room.winner && (
-            <GameResult winner={room.players[room.winner]} players={room.players} />
+            <GameResult winner={room.players[room.winner]} />
           )}
         </div>
       </div>
