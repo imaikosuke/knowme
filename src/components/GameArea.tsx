@@ -196,6 +196,11 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
     setShowCountdown(false);
   }, [pendingPlayerCount]);
 
+  const getCurrentAnswerer = useCallback(() => {
+    const currentAnswererId = room.gameState.currentPlayerId;
+    return players[currentAnswererId]?.nickname || "Unknown";
+  }, [players, room.gameState.currentPlayerId]);
+
   if (!currentQuestion) {
     return <div>次のお題を待っています...</div>;
   }
@@ -203,7 +208,10 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
   return (
     <div className="space-y-4">
       <div className="bg-white bg-opacity-50 rounded-lg p-4 flex justify-between items-center">
-        <h2 className="text-xl font-semibold">お題:</h2>
+        <div className="flex items-center space-x-2">
+          <span className="font-semibold">回答者:</span>
+          <span className="bg-green-500 text-white px-3 py-1 rounded-full">{getCurrentAnswerer()}</span>
+        </div>
         <div className="bg-blue-500 text-white px-3 py-1 rounded-full flex items-center space-x-1">
           <span>残り</span>
           {!showCountdown && !isAllPlayersGuessed && displayedPlayerCount > 0 ? (
@@ -222,8 +230,12 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
           <User size={16} className="ml-1" />
         </div>
       </div>
+
       {currentQuestion && (
-        <p className="mb-4 text-lg bg-white bg-opacity-70 rounded-lg p-4">{currentQuestion.text}</p>
+        <div className="bg-white bg-opacity-70 rounded-lg p-4">
+          <h2 className="text-xl font-semibold mb-2">お題:</h2>
+          <p className="text-lg">{currentQuestion.text}</p>
+        </div>
       )}
       {isAllPlayersGuessed &&
         currentPlayer.id != room.gameState.currentPlayerId &&
