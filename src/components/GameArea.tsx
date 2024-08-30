@@ -147,6 +147,8 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
       });
       setIsSubmitedAnswer(true);
       setAnswer("");
+    } else {
+      toast.error("回答を入力してください");
     }
   }, [answer, currentQuestion, room.id, currentPlayer.id, gameStatus]);
 
