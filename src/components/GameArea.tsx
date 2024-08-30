@@ -10,6 +10,7 @@ import { waitFor } from "@/utils/waitFor";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import { User } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 type GameAreaProps = {
   room: Room;
@@ -209,20 +210,33 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white bg-opacity-50 rounded-lg p-4 flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <span className="font-semibold">回答者:</span>
-          <span className="bg-green-500 text-white px-3 py-1 rounded-full">{getCurrentAnswerer()}</span>
+      <div className="bg-white bg-opacity-50 rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <div className="flex items-center space-x-2 w-full sm:w-auto">
+          <span className="font-semibold whitespace-nowrap">回答者:</span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <span className="bg-green-500 text-white px-3 py-1 rounded-full max-w-[150px] truncate">
+                  {getCurrentAnswerer()}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{getCurrentAnswerer()}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
-        <div className="bg-blue-500 text-white px-3 py-1 rounded-full flex items-center space-x-1">
-          <span>残り</span>
-          {showCountdown || isAllPlayersGuessed || displayedPlayerCount < 2 ? (
-            <p className="font-bold mx-1">？</p>
-          ) : (
-            <p className="font-bold mx-1">{displayedPlayerCount}</p>
-          )}
-          <span>人</span>
-          <User size={16} className="ml-1" />
+        <div className="w-full sm:w-auto flex justify-end">
+          <div className="bg-blue-500 text-white px-3 py-1 rounded-full flex items-center space-x-1 inline-flex">
+            <span>残り</span>
+            {showCountdown || isAllPlayersGuessed || displayedPlayerCount < 2 ? (
+              <p className="font-bold mx-1">？</p>
+            ) : (
+              <p className="font-bold mx-1">{displayedPlayerCount}</p>
+            )}
+            <span>人</span>
+            <User size={16} className="ml-1" />
+          </div>
         </div>
       </div>
 
