@@ -9,7 +9,6 @@ import Countdown from "./Countdown";
 import { waitFor } from "@/utils/waitFor";
 import toast from "react-hot-toast";
 import Image from "next/image";
-import CountUp from "react-countup";
 import { User } from "lucide-react";
 
 type GameAreaProps = {
@@ -217,12 +216,10 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
         </div>
         <div className="bg-blue-500 text-white px-3 py-1 rounded-full flex items-center space-x-1">
           <span>残り</span>
-          {!showCountdown && !isAllPlayersGuessed && displayedPlayerCount > 0 ? (
-            <CountUp start={0} end={displayedPlayerCount} duration={2} separator=",">
-              {({ countUpRef }) => <span ref={countUpRef} className="font-bold mx-1" />}
-            </CountUp>
-          ) : (
+          {showCountdown || isAllPlayersGuessed || displayedPlayerCount < 2 ? (
             <p className="font-bold mx-1">？</p>
+          ) : (
+            <p className="font-bold mx-1">{displayedPlayerCount}</p>
           )}
           <span>人</span>
           <User size={16} className="ml-1" />
