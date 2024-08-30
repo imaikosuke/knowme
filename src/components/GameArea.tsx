@@ -37,6 +37,7 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
   const [actualPlayerCount, setActualPlayerCount] = useState<number>(0);
   const [shouldUpdatePlayerCount, setShouldUpdatePlayerCount] = useState<boolean>(false);
   const [isGameJustStarted, setIsGameJustStarted] = useState<boolean>(true);
+  const [isSubmitedAnswer, setIsSubmitedAnswer] = useState<boolean>(false);
 
   const handleRoomUpdate = useCallback((data: any) => {
     if (data) {
@@ -99,6 +100,7 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
       await moveToNextRound(room.id);
       setIsCorrect(false);
       setGuessSubmitted(false);
+      setIsSubmitedAnswer(false);
     }
   }, [room.id, gameStatus, isNowEliminated, actualPlayerCount]);
 
@@ -143,6 +145,7 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
         questionId: currentQuestion.id,
         answer,
       });
+      setIsSubmitedAnswer(true);
       setAnswer("");
     }
   }, [answer, currentQuestion, room.id, currentPlayer.id, gameStatus]);
@@ -215,12 +218,7 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
         <div className="bg-blue-500 text-white px-3 py-1 rounded-full flex items-center space-x-1">
           <span>残り</span>
           {!showCountdown && !isAllPlayersGuessed && displayedPlayerCount > 0 ? (
-            <CountUp
-              start={0}
-              end={displayedPlayerCount}
-              duration={2}
-              separator=","
-            >
+            <CountUp start={0} end={displayedPlayerCount} duration={2} separator=",">
               {({ countUpRef }) => <span ref={countUpRef} className="font-bold mx-1" />}
             </CountUp>
           ) : (
@@ -251,7 +249,7 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
           <p>引き続きゲームを観戦できますが、回答はできません。</p>
         </div>
       )}
-      {currentPlayer.id === room.gameState.currentPlayerId && !currentPlayer.isEliminated ? (
+      {currentPlayer.id === room.gameState.currentPlayerId && !currentPlayer.isEliminated && (
         <div className="space-y-2">
           <Input
             type="text"
@@ -263,32 +261,40 @@ export default function GameArea({ room, currentPlayer }: GameAreaProps) {
           <Button
             onClick={handleSubmitAnswer}
             className="w-full bg-[#FF7F7F] hover:bg-[#FF9999] text-white"
+            disabled={isSubmitedAnswer}
           >
             回答を送信
           </Button>
         </div>
-      ) : (
-        allAnswers.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold mb-2">
-              {currentPlayer.isEliminated ? "現在の選択肢:" : "真実だと思う回答を選択:"}
-            </h3>
-            {allAnswers.map((ans, index) => (
-              <Button
-                key={index}
-                onClick={() => !currentPlayer.isEliminated && !guessSubmitted && handleSubmitGuess(ans)}
-                className={`w-full mb-2 ${
-                  showCountdown
-                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                    : "bg-[#7FC8FF] hover:bg-[#99D6FF] text-white"
-                }`}
-                disabled={currentPlayer.isEliminated || guessSubmitted}
-              >
-                {ans}
-              </Button>
-            ))}
-          </div>
-        )
+      )}
+      {allAnswers.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold mb-2">
+            {currentPlayer.id === room.gameState.currentPlayerId
+              ? "生成された選択肢:"
+              : currentPlayer.isEliminated
+              ? "現在の選択肢:"
+              : "真実だと思う回答を選択:"}
+          </h3>
+          {allAnswers.map((ans, index) => (
+            <Button
+              key={index}
+              onClick={() => !currentPlayer.isEliminated && !guessSubmitted && handleSubmitGuess(ans)}
+              className={`w-full mb-2 ${
+                showCountdown
+                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                  : "bg-[#7FC8FF] hover:bg-[#99D6FF] text-white"
+              }`}
+              disabled={
+                currentPlayer.isEliminated ||
+                guessSubmitted ||
+                currentPlayer.id === room.gameState.currentPlayerId
+              }
+            >
+              {ans}
+            </Button>
+          ))}
+        </div>
       )}
       {showCountdown && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
