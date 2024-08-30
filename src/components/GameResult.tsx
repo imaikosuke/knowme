@@ -13,10 +13,9 @@ const XLogo = () => (
 
 interface GameResultProps {
   winner: Player;
-  players: Record<string, Player>;
 }
 
-const GameResult: React.FC<GameResultProps> = ({ winner, players }) => {
+const GameResult: React.FC<GameResultProps> = ({ winner }) => {
   const router = useRouter();
 
   // 紙吹雪アニメーション
@@ -41,17 +40,7 @@ const GameResult: React.FC<GameResultProps> = ({ winner, players }) => {
         <Image src="/trophy.png" alt="Trophy" width={150} height={150} className="mx-auto" />
       </div>
       <p className="text-2xl font-semibold mb-4">\ {winner.nickname} /</p>
-      <div className="mb-8">
-        <h3 className="text-xl font-semibold mb-2">最終結果</h3>
-        <ul>
-          {Object.values(players).map((player) => (
-            <li key={player.id} className="mb-2">
-              {player.nickname}:{" "}
-              {player.isEliminated ? "脱落" : player.id === winner.id ? "勝利" : "敗北"}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <h3 className="text-xl font-semibold mb-8">優勝おめでとう！</h3>
       <div className="flex justify-center space-x-4">
         <Button
           onClick={() => {
